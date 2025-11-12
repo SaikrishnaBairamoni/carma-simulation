@@ -3,16 +3,23 @@ on:
   push:
     branches:
       - develop
-      - master
-      - "release/*"
-    tags:
-      - "carma-system-*"
-
 jobs:
-  dockerhub:
-    uses: usdot-fhwa-stol/actions/.github/workflows/dockerhub.yml@main
-    secrets:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-    with:
-      runner: ubuntu-latest-16-cores
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and Push image to GHCR
+        run: |
+          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/carma-simulation:ghcr-test
+          docker build -t $IMAGE_NAME .
+          docker push $IMAGE_NAME
+
